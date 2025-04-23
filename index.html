@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LLaMA 3 Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+    }
+    label, input, textarea, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    textarea {
+      resize: vertical;
+      height: 100px;
+    }
+    .response {
+      background-color: #f0f0f0;
+      padding: 15px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h2>Chat with LLaMA 3.2</h2>
+  
+  <form id="chatForm">
+    <label for="user_id">User ID:</label>
+    <input type="text" id="user_id" required>
+
+    <label for="question">Question:</label>
+    <textarea id="question" required></textarea>
+
+    <button type="submit">Send</button>
+  </form>
+
+  <h3>Response:</h3>
+  <div class="response" id="response"></div>
+
+  <script>
+    const form = document.getElementById('chatForm');
+    const responseDiv = document.getElementById('response');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const user_id = document.getElementById('user_id').value;
+      const question = document.getElementById('question').value;
+
+      responseDiv.textContent = "Waiting for response...";
+
+      try {
+        const res = await fetch('http://localhost:8080/chat', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ user_id, question })
+});
+
+
+        if (!res.ok) throw new Error("Error from server");
+
+        const data = await res.json();
+        responseDiv.textContent = data.result;
+      } catch (err) {
+        responseDiv.textContent = "Error: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
