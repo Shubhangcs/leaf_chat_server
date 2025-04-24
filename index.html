@@ -1,77 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>LLaMA 3 Chat</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 50px auto;
-    }
-    label, input, textarea, button {
-      display: block;
-      width: 100%;
-      margin-bottom: 15px;
-    }
-    textarea {
-      resize: vertical;
-      height: 100px;
-    }
-    .response {
-      background-color: #f0f0f0;
-      padding: 15px;
-      border-radius: 8px;
-      white-space: pre-wrap;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container {
+            width: 50%;
+            margin: 0 auto;
+            padding-top: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3b61ff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2a47c2;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .response p {
+            margin: 0;
+        }
+    </style>
 </head>
 <body>
-  <h2>Chat with LLaMA 3.2</h2>
-  
-  <form id="chatForm">
-    <label for="user_id">User ID:</label>
-    <input type="text" id="user_id" required>
+    <div class="container">
+        <h1>Chat with AI</h1>
+        
+        <div class="form-group">
+            <label for="userID">User ID:</label>
+            <input type="text" id="userID" placeholder="Enter User ID">
+        </div>
 
-    <label for="question">Question:</label>
-    <textarea id="question" required></textarea>
+        <div class="form-group">
+            <label for="chatID">Chat ID (Plant Name):</label>
+            <input type="text" id="chatID" placeholder="Enter Chat ID (Plant Name)">
+        </div>
 
-    <button type="submit">Send</button>
-  </form>
+        <div class="form-group">
+            <label for="question">Your Question:</label>
+            <textarea id="question" rows="4" placeholder="Enter your question"></textarea>
+        </div>
 
-  <h3>Response:</h3>
-  <div class="response" id="response"></div>
+        <button id="sendBtn">Send</button>
 
-  <script>
-    const form = document.getElementById('chatForm');
-    const responseDiv = document.getElementById('response');
+        <div class="response" id="responseContainer" style="display:none;">
+            <h3>AI Response:</h3>
+            <p id="responseMessage"></p>
+        </div>
+    </div>
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    <script>
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const userID = document.getElementById('userID').value;
+            const chatID = document.getElementById('chatID').value;
+            const question = document.getElementById('question').value;
 
-      const user_id = document.getElementById('user_id').value;
-      const question = document.getElementById('question').value;
+            if (!userID || !chatID || !question) {
+                alert("Please fill in all fields.");
+                return;
+            }
 
-      responseDiv.textContent = "Waiting for response...";
+            const payload = {
+                user_id: userID,
+                chat_id: chatID,
+                question: question
+            };
 
-      try {
-        const res = await fetch('http://localhost:8080/chat', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ user_id, question })
-});
+            try {
+                const response = await fetch('http://192.168.217.128:8080/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-
-        if (!res.ok) throw new Error("Error from server");
-
-        const data = await res.json();
-        responseDiv.textContent = data.result;
-      } catch (err) {
-        responseDiv.textContent = "Error: " + err.message;
-      }
-    });
-  </script>
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('responseContainer').style.display = 'block';
+                    document.getElementById('responseMessage').textContent = data.result;
+                } else {
+                    alert("Failed to get response from the server.");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("An error occurred while sending the message.");
+            }
+        });
+    </script>
 </body>
 </html>

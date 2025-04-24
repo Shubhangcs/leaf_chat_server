@@ -12,17 +12,20 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
+	"cloud.google.com/go/firestore"
 )
 
 type ChatRequest struct {
 	UserID   string `json:"user_id"`
+	ChatID   string `json:"chat_id"` // This is the plant name
 	Question string `json:"question"`
 }
 
 type FirebaseData struct {
 	UserID   string `json:"user_id"`
-	Question string `json:"question"`
-	Result   string `json:"result"`
+	ChatID   string `json:"chat_id"`
+	Message  string `json:"message"`
+	UserType string `json:"user_type"` // "ai"
 }
 
 type OllamaResponse struct {
@@ -32,12 +35,10 @@ type OllamaResponse struct {
 
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Allow all origins — change "*" to specific domains in production
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-		// Handle preflight request
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -92,14 +93,16 @@ func saveToFirestore(ctx context.Context, app *firebase.App, data FirebaseData) 
 	}
 	defer client.Close()
 
-	// Collection: chat -> Document: user_id -> Collection: chats -> Add new doc
-	_, _, err = client.Collection("chat").
+	_, _, err = client.Collection("chats").
 		Doc(data.UserID).
-		Collection("chats").
+		Collection("chat").
+		Doc(data.ChatID).
+		Collection("messages").
 		Add(ctx, map[string]interface{}{
-			"user_id":  data.UserID,
-			"question": data.Question,
-			"result":   data.Result,
+			"message":   data.Message,
+			"timestamp": firestore.ServerTimestamp,
+			"user_id":   data.UserID,
+			"user_type": "AI",
 		})
 
 	return err
@@ -126,8 +129,9 @@ func chatHandler(app *firebase.App) http.HandlerFunc {
 
 		data := FirebaseData{
 			UserID:   chatReq.UserID,
-			Question: chatReq.Question,
-			Result:   response,
+			ChatID:   chatReq.ChatID,
+			Message:  response,
+			UserType: "ai",
 		}
 
 		if err := saveToFirestore(r.Context(), app, data); err != nil {
@@ -142,13 +146,13 @@ func chatHandler(app *firebase.App) http.HandlerFunc {
 
 func main() {
 	ctx := context.Background()
-	sa := option.WithCredentialsFile("leafscan-d0ee4-firebase-adminsdk-fbsvc-cb14153170.json")
+	sa := option.WithCredentialsFile("leafscan-d0ee4-firebase-adminsdk-fbsvc-cb14153170.json") // replace with actual file if needed
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
 		log.Fatalf("Failed to initialize Firebase app: %v", err)
 	}
-	chat := http.HandlerFunc(chatHandler(app))
-	http.Handle("/chat", withCORS(chat))
-	fmt.Println("🚀 Server running at http://localhost:8080")
+
+	http.Handle("/chat", withCORS(chatHandler(app)))
+	fmt.Println("🚀 Server running at http://localhost:8000")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
