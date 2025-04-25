@@ -153,6 +153,6 @@ func main() {
 	}
 
 	http.Handle("/chat", withCORS(chatHandler(app)))
-	fmt.Println("🚀 Server running at http://localhost:8000")
+	fmt.Println("🚀 Server running at http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
