@@ -49,15 +49,16 @@ func withCORS(next http.Handler) http.Handler {
 }
 
 func ollamaInformationModel(prompt string) (string, error) {
-	body, err := json.Marshal(map[string]string{
-		"model":  "llama3.2",
+	body, err := json.Marshal(map[string]any{
+		"model":  "tinyllama",
 		"prompt": prompt,
+		"stream": false,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	res, err := http.Post("http://localhost:11434/api/generate", "application/json", bytes.NewBuffer(body))
+	res, err := http.Post("http://34.172.219.173:11434/api/generate", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Println("HTTP error:", err)
 		return "", err
@@ -153,6 +154,6 @@ func main() {
 	}
 
 	http.Handle("/chat", withCORS(chatHandler(app)))
-	fmt.Println("🚀 Server running at http://localhost:8080")
+	fmt.Println("🚀 Server running at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
