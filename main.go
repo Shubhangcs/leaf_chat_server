@@ -49,10 +49,9 @@ func withCORS(next http.Handler) http.Handler {
 }
 
 func ollamaInformationModel(prompt string) (string, error) {
-	body, err := json.Marshal(map[string]any{
-		"model":  "tinyllama",
+	body, err := json.Marshal(map[string]string{
+		"model":  "llama3.2",
 		"prompt": prompt,
-		"stream": false,
 	})
 	if err != nil {
 		return "", err
